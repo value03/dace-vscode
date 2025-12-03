@@ -38,6 +38,7 @@ import {
     SDFVComponent,
     VSCodeSDFV,
 } from '../vscode_sdfv';
+import { SDFVVSCodeUI } from '../vscode_sdfv_ui';
 
 
 export class VSCodeRenderer extends SDFGRenderer {
@@ -199,6 +200,8 @@ export class VSCodeRenderer extends SDFGRenderer {
                 console.error('Could not update settings:', err);
             });
         });
+
+        SDFVVSCodeUI.getInstance().registerExpandInfoButton();
 
         return this.INSTANCE;
     }
@@ -642,7 +645,7 @@ export class VSCodeRenderer extends SDFGRenderer {
             'text': 'You need to open the SDFG Optimization sidepanel to ' +
                 'add SDFG elements or edit SDFG properties',
         }));
-        modalRet.modal.modal('show');
+        modalRet.modal.show();
     }
 
     public showSelectLibraryNodeDialog(callback: () => unknown): void {
@@ -700,13 +703,13 @@ export class VSCodeRenderer extends SDFGRenderer {
                 if (libInputVal && typeof libInputVal === 'string') {
                     callback();
                     this.addModeLib = libraries[libInputVal];
-                    modalRet.modal.modal('hide');
+                    modalRet.modal.hide();
                 } else {
                     backgroundLibInput.addClass('is-invalid');
                 }
             });
 
-            modalRet.modal.modal('show');
+            modalRet.modal.show();
         }).catch(() => {
             console.error('Could not retrieve SDFG meta dictionary');
         });
