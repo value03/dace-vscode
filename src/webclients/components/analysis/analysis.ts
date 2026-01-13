@@ -176,6 +176,8 @@ class AnalysisPanel extends ICPCWebclientMessagingComponent {
     private runtimeReportFilenameLabel?: JQuery<HTMLSpanElement>;
     private runtimeTimeCriteriumSelect?: JQuery<HTMLSelectElement>;
 
+    private allocationReportFilenameLabel?: JQuery<HTMLSpanElement>;
+
     public get rtReportLabel(): JQuery<HTMLSpanElement> | undefined {
         return this.runtimeReportFilenameLabel;
     }
@@ -245,6 +247,25 @@ class AnalysisPanel extends ICPCWebclientMessagingComponent {
                     void AnalysisPanel.onLoadInstrumentationReport(
                         retval.data, rtSelCrit
                     );
+                }
+            });
+        });
+
+        this.allocationReportFilenameLabel =
+            $('#allocation-report-filename-label');
+
+        $('#allocation-report-browse-btn').on('click', () => {
+            void this.invoke<{
+                data?: string,
+                path?: Uri,
+            }>('selectReportFile').then(retval => {
+                const aPanel = AnalysisPanel.getInstance();
+                if (retval.data && retval.path) {
+                    const splits = retval.path.path.split('/');
+                    const filename = splits[splits.length - 1];
+                    aPanel.allocationReportFilenameLabel?.val(filename);
+                    aPanel.allocationReportFilenameLabel?.prop('title', retval.path.fsPath);
+                    void aPanel.invokeEditorProcedure('setAllocationMap', [retval.data]);
                 }
             });
         });
@@ -355,6 +376,7 @@ class AnalysisPanel extends ICPCWebclientMessagingComponent {
             const updateHandler = () => {
                 const overlays = [];
                 const nodeOverlay = this.nodeOverlaySelect?.val();
+                console.log('Selected node overlay:', nodeOverlay);
                 if (nodeOverlay && nodeOverlay !== 'none' &&
                     typeof nodeOverlay === 'string')
                     overlays.push(nodeOverlay);
@@ -369,6 +391,14 @@ class AnalysisPanel extends ICPCWebclientMessagingComponent {
                 } else {
                     $('#runtime-measurement-divider').hide();
                     $('#runtime-measurement').hide();
+                }
+
+                if (nodeOverlay?.toString().startsWith('Allocation')) {
+                    $('#allocation-report-divider').show();
+                    $('#allocation-report').show();
+                } else {
+                    $('#allocation-report-divider').hide();
+                    $('#allocation-report').hide();
                 }
 
                 void AnalysisPanel.setOverlays(overlays);

@@ -76,6 +76,19 @@ export class AnalysisController {
     }
 
     /**
+     * Set the allocation map for the AllocationOverlay.
+     * @param map Allocation map to set.
+     */
+    @ICPCRequest()
+    public setAllocationMap(map: Record<string, string[]>): void {
+        const olManager = VSCodeRenderer.getInstance()?.overlayManager;
+        const allocationOverlay = olManager?.getOverlay(AllocationOverlay);
+        if (allocationOverlay && allocationOverlay instanceof AllocationOverlay)
+            allocationOverlay.setAllocationMap(map);
+        console.log('Setting allocation map:', map);
+    }
+
+    /**
      * Load new data for the active runtime overlays.
      * @param report    New report to be loaded.
      * @param criterium Selection criterium to use.
