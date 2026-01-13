@@ -27,6 +27,7 @@ import {
     SimulatedOperationalIntensityOverlay,
     Point2D,
     RuntimeMicroSecondsOverlay,
+    AllocationOverlay,
     SDFG,
     SDFGElement,
     SDFGRenderer,
@@ -124,6 +125,7 @@ export class VSCodeSDFV extends SDFV {
             'SimulatedOperationalIntensityOverlay':
                 SimulatedOperationalIntensityOverlay,
             'LogicalGroupOverlay': LogicalGroupOverlay,
+            'AllocationOverlay': AllocationOverlay,
         };
 
     private processingOverlay?: JQuery;

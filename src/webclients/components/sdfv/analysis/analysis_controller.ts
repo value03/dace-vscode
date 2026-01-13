@@ -13,6 +13,7 @@ import {
     DepthOverlay,
     AvgParallelismOverlay,
     RuntimeReportOverlay,
+    AllocationOverlay,
 } from '@spcl/sdfv/src';
 import {
     ICPCRequest,
@@ -162,6 +163,11 @@ export class AnalysisController {
                 symbols[symbol] = map[symbol] ?? '';
             });
             const availableOverlays: IOverlayDescription[] = [
+                {
+                    class: 'AllocationOverlay',
+                    label: 'Memory Allocations',
+                    type: AllocationOverlay.type,
+                },
                 {
                     class: 'MemoryVolumeOverlay',
                     label: 'Logical Memory Volume',
