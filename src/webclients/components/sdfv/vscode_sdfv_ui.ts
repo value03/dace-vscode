@@ -4,6 +4,7 @@ import { findGraphElementByUUID } from '@spcl/sdfv/src/utils/sdfg/sdfg_utils';
 import { ISDFVUserInterface } from '@spcl/sdfv/src/sdfv_ui';
 import { SDFVSettings } from '@spcl/sdfv/src/utils/sdfv_settings';
 import { SDFVComponent, VSCodeSDFV } from './vscode_sdfv';
+import { AllocationOverlay } from '@spcl/sdfv/src';
 import {
     appendDataDescriptorTable,
     appendSymbolsTable,
@@ -303,6 +304,86 @@ export class SDFVVSCodeUI implements ISDFVUserInterface {
                         'class': 'container-fluid attr-table-base-container',
                     }).appendTo(contents);
                     generateAttributesTable(desc, undefined, tableContainer);
+
+                    const allocationOverlay =
+                    renderer.overlayManager.getOverlay(AllocationOverlay) as
+                    AllocationOverlay | undefined;
+
+                    if (allocationOverlay?.hasKey(elem.attributes()?.guid)) {
+                        setTimeout(() => {
+                            const generalTable = tableContainer
+                                .find('[id^="info-table-General-"]');
+                            const row = $('<div>', {
+                                'class': 'row attr-table-row',
+                                'title': 'Toggle highlighting of all Nodes, where this data-container is allocated.',
+                            });
+                            generalTable.prepend(row);
+                            
+                            const div1 = $('<div>', {
+                                'class':'d-flex flex-row align-items-center p-0',
+                            }).appendTo(row);
+
+                            div1.append($('<div>', {
+                                'class':'attr-row-prefix-cell',
+                            }));
+
+                            const div2 = ($('<div>', {
+                                'class':'attr-row-content-cell flex-grow-1',
+                            })).appendTo(div1);
+
+
+                            const div3 = ($('<div>', {
+                                'class':'container-fluid',
+                            })).appendTo(div2);
+
+                            const div4 = ($('<div>', {
+                                'class':'row',
+                            })).appendTo(div3);
+
+                            div4.append($('<div>', {
+                                'class':'attr-table-heading attr-table-cell attr-cell-s',
+                                'text':'allocation_overlay',
+                            }));
+
+                            const div5 = ($('<div>', {
+                                'class':'attr-table-cell attr-cell-1',
+                            })).appendTo(div4);
+
+
+
+                            const div6 = ($('<div>', {
+                                'class':'attr-table-value',
+                            })).appendTo(div5);
+                            const div7 = ($('<div>', {
+                                'class':'form-check form-switch sdfv-property-input sdfv-propoerty-bool'
+                            })).appendTo(div6);
+
+                            const checkbox = ($('<input>', {
+                                'type':'checkbox',
+                                'class':'form-check-input',
+                                'id':'allocation-overlay-toggle',
+                                'checked':allocationOverlay.isFocused(elem.attributes()?.guid),
+                            })).appendTo(div7);
+                            div7.append($('<label>', {
+                                'class':'form-check-label',
+                                'for':'allocation-overlay-toggle',
+                            }));
+
+                            checkbox.on('change', () => {
+                                if (checkbox.is(':checked')) {
+                                    allocationOverlay
+                                        .setFocusedNode(
+                                            elem.attributes()?.guid
+                                        );
+                                } else {
+                                    allocationOverlay
+                                        .removeFocusedNode(
+                                            elem.attributes()?.guid
+                                        );
+                                }
+                            });
+                        }, 10);
+                    }
                 }
             } else if (elem instanceof NestedSDFG) {
                 // If nested SDFG, add SDFG info too.
@@ -372,10 +453,134 @@ export class SDFVVSCodeUI implements ISDFVUserInterface {
                         contents, attrs._arrays, elem.jsonData,
                         DATA_CONTAINERS_START_EXPANDED_THRESHOLD
                     );
-                    appendSymbolsTable(
-                        contents, attrs.symbols,
-                        SYMBOLS_START_EXPANDED_THRESHOLD
-                    );
+                    /* eslint-disable-next-line
+                       @typescript-eslint/no-unnecessary-condition */
+                    if (attrs.symbols) {
+                        appendSymbolsTable(
+                            contents, attrs.symbols,
+                            SYMBOLS_START_EXPANDED_THRESHOLD
+                        );
+                    }
+                }
+                const allocationOverlay =
+                    renderer.overlayManager.getOverlay(AllocationOverlay) as
+                    AllocationOverlay | undefined;
+
+                if(allocationOverlay) {
+                    setTimeout(() => {
+                        const attrTable = $('<div>', {
+                            'class':'container-fluid attr-table-base-container',
+                        }).appendTo(contents);
+
+                        const div1 = ($('<div>', {
+                            'class':'row attr-table-cat-row',
+                        })).appendTo(attrTable);
+
+                        const div2 = ($('<div>', {
+                            'class':'col-12 attr-table-cat-container',
+                        })).appendTo(div1);
+
+                        div2.append('<button class="attr-cat-toggle-btn active" type="button" data-bs-toggle="collapse" data-bs-target="#info-table-allocation-overlay" aria-expanded="false" aria-controls="info-table-allocation-overlay">Allocation Overlay<i class="attr-cat-toggle-btn-indicator material-symbols-outlined">expand_less</i></button>');
+
+                        const tableBody = $('<div>', {
+                            'class': 'container-fluid attr-table collapse show',
+                            'id': 'info-table-allocation-overlay',
+                        }).appendTo(div2);
+
+                        for (const blockId of renderer.graph?.nodes() ?? []) {
+                            const block = renderer.graph!.node(blockId);
+                            if (block instanceof State && block.graph) {
+                                for (const nodeId of block.graph.nodes()) {
+                                    const node = block.graph.node(nodeId);
+                                    const nodeSdfgGuid = node?.sdfg.attributes?.guid;
+                                    if (node instanceof AccessNode &&
+                                        nodeSdfgGuid === attrs?.guid) {
+                                        const nodeAttr = node.jsonData?.attributes;
+
+                                        const label = nodeAttr?.data;
+                                        const guidValue = nodeAttr?.guid;
+
+                                        if (typeof guidValue !== 'string' ||
+                                            typeof label !== 'string')
+                                            continue;
+
+                                        const guid: string = guidValue;
+                                        if(allocationOverlay.hasKey(guid)) {
+                                            const rowContainer = $('<div>', {
+                                                'class':'row attr-table-row',
+                                            }).appendTo(tableBody);
+
+                                            const row = $('<div>', {
+                                                'class': 'd-flex flex-row align-items-center p-0',
+                                            }).appendTo(rowContainer);
+
+                                            const prefixCell = $('<div>', {
+                                                'class':'attr-row-prefix-cell',
+                                            }).appendTo(row);
+
+                                            const contentCell = $('<div>', {
+                                                'class':'attr-row-content-cell flex-grow-1',
+                                            }).appendTo(row);
+
+                                            const cellContainer = $('<div>', {
+                                                'class':'container-fluid',
+                                            }).appendTo(contentCell);
+
+                                            const cellRow = $('<div>', {
+                                                'class':'row',
+                                            }).appendTo(cellContainer);
+
+                                            const heading = $('<div>', {
+                                                'class':'attr-table-heading attr-table-cell attr-cell-1',
+                                                'text': label,
+                                            }).appendTo(cellRow);
+
+                                            const valueCell = $('<div>', {
+                                                'class':'attr-table-cell attr-cell-1',
+                                            }).appendTo(cellRow);
+
+                                            const valueDiv = $('<div>', {
+                                                'class':'attr-table-value',
+                                            }).appendTo(valueCell);
+
+                                            const formCheckDiv = $('<div>', {
+                                                'class':'form-check form-switch sdfv-property-input sdfv-propoerty-bool'
+                                            }).appendTo(valueDiv);
+
+
+
+                                            const checkbox = $('<input>', {
+                                                'type':'checkbox',
+                                                'class':'form-check-input',
+                                                'id':'allocation-overlay-toggle-' + guid,
+                                                'checked': allocationOverlay.isFocused(guid),
+                                            }).appendTo(formCheckDiv);
+
+                                            checkbox.on('change', () => {
+                                                if (checkbox.is(':checked')) {
+                                                    allocationOverlay
+                                                        .setFocusedNode(
+                                                        guid 
+                                                        );
+                                                } else {
+                                                    allocationOverlay
+                                                        .removeFocusedNode(
+                                                            guid
+                                                        );
+                                                }
+                                            });
+                                        }
+
+                                    }
+                                }
+                            }
+                        }
+                        
+
+                        console.log("data:", elem.attributes());
+
+                        console.log('SDFG info table:', contents);
+                    }, 10);
                 }
             }
 
